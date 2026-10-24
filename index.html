@@ -27,7 +27,7 @@
     
     .v2_tabs { display: flex; background: #111827; border-bottom: 1px solid var(--border-color); overflow-x: auto; scrollbar-width: none; }
     .v2_tabs::-webkit-scrollbar { display: none; }
-    .v2_tab_btn { flex: 0 0 auto; min-width: 20%; padding: 12px 8px; text-align: center; font-size: 11px; font-weight: 600; color: var(--text-muted); background: none; border: none; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; white-space: nowrap; }
+    .v2_tab_btn { flex: 0 0 auto; min-width: 18%; padding: 12px 8px; text-align: center; font-size: 11px; font-weight: 600; color: var(--text-muted); background: none; border: none; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; white-space: nowrap; }
     .v2_tab_btn.active { color: var(--accent-emerald); border-bottom-color: var(--accent-emerald); background: rgba(16, 185, 129, 0.08); }
 
     .v2_container { padding: 16px; max-width: 600px; margin: 0 auto; }
@@ -51,10 +51,17 @@
     .btn-danger { background: var(--accent-rose); color: #fff; }
     .btn-amber { background: var(--accent-amber); color: #0f172a; }
 
-    .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
     .form-control { width: 100%; background: #0f172a; border: 1px solid var(--border-color); color: #fff; padding: 10px 12px; border-radius: 8px; font-size: 14px; outline: none; }
     .form-control:focus { border-color: var(--accent-emerald); }
+
+    .range-slider { width: 100%; height: 6px; background: #334155; border-radius: 3px; outline: none; -webkit-appearance: none; }
+    .range-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent-emerald); cursor: pointer; }
+
+    .color-picker-grid { display: flex; gap: 10px; margin-top: 8px; }
+    .color-chip { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.2s; }
+    .color-chip.active { border-color: #ffffff; transform: scale(1.15); }
 
     .feedback-box { padding: 12px; border-radius: 8px; font-size: 13px; margin-top: 12px; display: none; }
     .feedback-success { background: rgba(16, 185, 129, 0.15); border: 1px solid var(--accent-emerald); color: var(--accent-emerald); }
@@ -88,6 +95,7 @@
     <button class="v2_tab_btn active" onclick="switchTab('tab_quiz', '⚡ Ráp Câu', this)">⚡ Ráp Câu</button>
     <button class="v2_tab_btn" onclick="switchTab('tab_custom', '➕ Tự Thêm Câu', this)">➕ Tự Thêm Câu</button>
     <button class="v2_tab_btn" onclick="switchTab('tab_patterns', '🗂️ Mẫu Câu', this)">🗂️ Mẫu Câu</button>
+    <button class="v2_tab_btn" onclick="switchTab('tab_settings', '⚙️ Cài Đặt', this)">⚙️ Cài Đặt</button>
     <button class="v2_tab_btn" onclick="switchTab('tab_draw', '🎨 Vẽ Nháp', this)">🎨 Vẽ Nháp</button>
     <button class="v2_tab_btn" onclick="switchTab('tab_cloud', '☁️ Sao Lưu', this)">☁️ Sao Lưu</button>
   </nav>
@@ -170,7 +178,55 @@
       </div>
     </div>
 
-    <!-- TAB 4: VẼ NHÁP -->
+    <!-- TAB 4: CÀI ĐẶT (SETTINGS) -->
+    <div id="tab_settings" class="v2_tab_content">
+      <div class="card">
+        <h3>🔊 Tùy Chỉnh Giọng Đọc & Tốc Độ (TTS)</h3>
+
+        <div class="form-group">
+          <label><span>Ngôn ngữ & Chất giọng:</span> <strong id="lbl_lang_val" style="color:var(--accent-blue);">en-US</strong></label>
+          <select id="set_tts_lang" class="form-control" onchange="_update_settings_preview()">
+            <option value="en-US">🇺🇸 Tiếng Anh (Mỹ - en-US)</option>
+            <option value="en-GB">🇬🇧 Tiếng Anh (Anh - en-GB)</option>
+            <option value="en-AU">🇦🇺 Tiếng Anh (Úc - en-AU)</option>
+            <option value="en-IN">🇮🇳 Tiếng Anh (Ấn Độ - en-IN)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label><span>Tốc độ đọc (Speech Speed):</span> <strong id="lbl_rate_val" style="color:var(--accent-emerald);">0.9x</strong></label>
+          <input type="range" id="set_tts_rate" class="range-slider" min="0.5" max="1.5" step="0.05" value="0.9" oninput="_update_settings_preview()">
+        </div>
+
+        <div class="form-group">
+          <label><span>Cao độ giọng (Pitch):</span> <strong id="lbl_pitch_val" style="color:var(--accent-amber);">1.0</strong></label>
+          <input type="range" id="set_tts_pitch" class="range-slider" min="0.5" max="1.5" step="0.05" value="1.0" oninput="_update_settings_preview()">
+        </div>
+
+        <div class="form-group">
+          <label><span>Âm lượng (Volume):</span> <strong id="lbl_vol_val" style="color:var(--accent-blue);">100%</strong></label>
+          <input type="range" id="set_tts_vol" class="range-slider" min="0.1" max="1.0" step="0.05" value="1.0" oninput="_update_settings_preview()">
+        </div>
+
+        <button class="btn btn-amber" style="margin-top: 6px;" onclick="speakText('Hello! How are you doing today? This is a test sentence.')">🔊 NGHE THỬ GIỌNG ĐỌC</button>
+      </div>
+
+      <div class="card">
+        <h3>🎨 Tùy Chỉnh Màu Sắc Giao Diện</h3>
+        <label style="font-size:12px; color:var(--text-muted);">Chọn màu điểm nhấn (Accent Theme):</label>
+        <div class="color-picker-grid">
+          <div class="color-chip active" style="background:#10b981;" onclick="_set_theme_color('#10b981', '#059669', this)"></div>
+          <div class="color-chip" style="background:#38bdf8;" onclick="_set_theme_color('#38bdf8', '#0284c7', this)"></div>
+          <div class="color-chip" style="background:#f59e0b;" onclick="_set_theme_color('#f59e0b', '#d97706', this)"></div>
+          <div class="color-chip" style="background:#ec4899;" onclick="_set_theme_color('#ec4899', '#db2777', this)"></div>
+          <div class="color-chip" style="background:#8b5cf6;" onclick="_set_theme_color('#8b5cf6', '#7c3aed', this)"></div>
+        </div>
+      </div>
+
+      <button class="btn" style="padding:14px;" onclick="_save_settings_btn()">💾 LƯU CẤU HÌNH CÀI ĐẶT</button>
+    </div>
+
+    <!-- TAB 5: VẼ NHÁP -->
     <div id="tab_draw" class="v2_tab_content">
       <div class="card">
         <h3>🎨 Vẽ Nháp Ngón Tay / Note Cụm Từ</h3>
@@ -179,7 +235,7 @@
       </div>
     </div>
 
-    <!-- TAB 5: SAO LƯU CLOUD -->
+    <!-- TAB 6: SAO LƯU CLOUD -->
     <div id="tab_cloud" class="v2_tab_content">
       <div class="card">
         <h3>☁️ Định Danh & Sao Lưu Cloud</h3>
@@ -239,6 +295,15 @@
       interstitialAdId: "ca-app-pub-3940256099942544/1033173712"
     };
 
+    let appSettings = getSafeStorage('_app_tts_settings', {
+      lang: 'en-US',
+      rate: 0.9,
+      pitch: 1.0,
+      vol: 1.0,
+      primaryColor: '#10b981',
+      hoverColor: '#059669'
+    });
+
     const DEFAULT_QUIZ_DATA = [
       { id: 'def_1', vn: "Tôi muốn đi đến sân bay.", en: "I want to go to the airport", words: ["I", "want", "to", "go", "to", "the", "airport"] },
       { id: 'def_2', vn: "Cái này giá bao nhiêu tiền?", en: "How much does this cost", words: ["How", "much", "does", "this", "cost"] },
@@ -271,14 +336,19 @@
     async function speakText(text) {
       if (!text) return;
 
+      const rateVal = parseFloat(appSettings.rate || 0.9);
+      const pitchVal = parseFloat(appSettings.pitch || 1.0);
+      const volVal = parseFloat(appSettings.vol || 1.0);
+      const langVal = appSettings.lang || 'en-US';
+
       if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.TextToSpeech) {
         try {
           await window.Capacitor.Plugins.TextToSpeech.speak({
             text: text,
-            lang: 'en-US',
-            rate: 0.9,
-            pitch: 1.0,
-            volume: 1.0,
+            lang: langVal,
+            rate: rateVal,
+            pitch: pitchVal,
+            volume: volVal,
             category: 'ambient'
           });
           return;
@@ -293,8 +363,10 @@
           if (window.speechSynthesis.paused) window.speechSynthesis.resume();
 
           const utter = new SpeechSynthesisUtterance(text);
-          utter.lang = 'en-US';
-          utter.rate = 0.85;
+          utter.lang = langVal;
+          utter.rate = rateVal;
+          utter.pitch = pitchVal;
+          utter.volume = volVal;
           window.speechSynthesis.speak(utter);
           return;
         } catch (e) {
@@ -309,6 +381,52 @@
       if (activeQuizList[currentQuizIndex]) {
         speakText(activeQuizList[currentQuizIndex].en);
       }
+    }
+
+    function _init_settings_ui() {
+      document.getElementById('set_tts_lang').value = appSettings.lang || 'en-US';
+      document.getElementById('set_tts_rate').value = appSettings.rate || 0.9;
+      document.getElementById('set_tts_pitch').value = appSettings.pitch || 1.0;
+      document.getElementById('set_tts_vol').value = appSettings.vol || 1.0;
+      _apply_theme_colors(appSettings.primaryColor || '#10b981', appSettings.hoverColor || '#059669');
+      _update_settings_preview();
+    }
+
+    function _update_settings_preview() {
+      const lang = document.getElementById('set_tts_lang').value;
+      const rate = document.getElementById('set_tts_rate').value;
+      const pitch = document.getElementById('set_tts_pitch').value;
+      const vol = document.getElementById('set_tts_vol').value;
+
+      document.getElementById('lbl_lang_val').innerText = lang;
+      document.getElementById('lbl_rate_val').innerText = rate + 'x';
+      document.getElementById('lbl_pitch_val').innerText = pitch;
+      document.getElementById('lbl_vol_val').innerText = Math.round(vol * 100) + '%';
+
+      appSettings.lang = lang;
+      appSettings.rate = rate;
+      appSettings.pitch = pitch;
+      appSettings.vol = vol;
+    }
+
+    function _set_theme_color(primary, hover, el) {
+      appSettings.primaryColor = primary;
+      appSettings.hoverColor = hover;
+      _apply_theme_colors(primary, hover);
+
+      document.querySelectorAll('.color-chip').forEach(c => c.classList.remove('active'));
+      if (el) el.classList.add('active');
+    }
+
+    function _apply_theme_colors(primary, hover) {
+      document.documentElement.style.setProperty('--accent-emerald', primary);
+      document.documentElement.style.setProperty('--accent-hover', hover);
+    }
+
+    function _save_settings_btn() {
+      setSafeStorage('_app_tts_settings', appSettings);
+      alert('✅ Đã lưu cài đặt giọng đọc và giao diện thành công!');
+      trackUserInteraction('save_settings');
     }
 
     function pushLog(eventType, screenName, keyword = '') {
@@ -656,6 +774,7 @@
 
       const fullAppData = {
         custom_sentences: customSentences,
+        tts_settings: appSettings,
         current_quiz_index: currentQuizIndex,
         backup_time: new Date().toISOString()
       };
@@ -725,6 +844,12 @@
             _rebuild_active_quiz_list();
           }
 
+          if (restored.tts_settings) {
+            appSettings = restored.tts_settings;
+            setSafeStorage('_app_tts_settings', appSettings);
+            _init_settings_ui();
+          }
+
           statusBox.style.background = 'rgba(16, 185, 129, 0.2)';
           statusBox.style.color = '#10b981';
           statusBox.innerText = '🎉 ' + data.message + ' Phục hồi tiến trình thành công!';
@@ -774,6 +899,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       const uidEl = document.getElementById('lbl_user_uid');
       if (uidEl) uidEl.innerText = userUid;
+      _init_settings_ui();
       initCanvas();
       _render_custom_sentence_list();
       _rebuild_active_quiz_list();
@@ -784,4 +910,3 @@
   </script>
 </body>
 </html>
- 
