@@ -94,7 +94,7 @@
 
   <div class="v2_container">
 
-    <!-- TAB 1: RÁP CÂU 30S -->
+    <!-- TAB 1: RÁP CÂU -->
     <div id="tab_quiz" class="v2_tab_content active">
       <div class="card">
         <h3>1. Cấu hình Chế độ Học</h3>
@@ -134,7 +134,7 @@
       </div>
     </div>
 
-    <!-- TAB 2: DÁN CÂU SONG NGỮ & CRUD -->
+    <!-- TAB 2: TỰ THÊM CÂU -->
     <div id="tab_custom" class="v2_tab_content">
       <div class="card">
         <h3>📋 Dán Hàng Loạt Câu Kèm Dịch Tiếng Việt</h3>
@@ -161,7 +161,7 @@
       </div>
     </div>
 
-    <!-- TAB 3: MẪU CÂU THỰC TẾ -->
+    <!-- TAB 3: MẪU CÂU -->
     <div id="tab_patterns" class="v2_tab_content">
       <div class="card">
         <h3>🗂️ Mẫu Câu Giao Tiếp Thường Gặp</h3>
@@ -209,7 +209,7 @@
 
   <script>
     window.onerror = function (msg, url, line) {
-      alert("Lỗi Runtime App:\n" + msg + "\nTại dòng: " + line);
+      console.log("Runtime Error: " + msg + " line: " + line);
       return false;
     };
 
@@ -268,13 +268,10 @@
       setSafeStorage('_app_user_uid', userUid);
     }
 
-    // =======================================================
-    // BỘ PHÁT ÂM NATIVE CAPACITOR TTS (CHẠY 100% TRÊN MỌI ANDROID)
-    // =======================================================
+    // NATIVE CAPACITOR TEXT-TO-SPEECH WITH WEB FALLBACK
     async function speakText(text) {
       if (!text) return;
 
-      // 1. Ưu tiên gọi Native Plugin Capacitor TextToSpeech (Chuẩn phần cứng Android)
       if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.TextToSpeech) {
         try {
           await window.Capacitor.Plugins.TextToSpeech.speak({
@@ -287,11 +284,10 @@
           });
           return;
         } catch (e) {
-          console.log('Capacitor TTS Err:', e);
+          console.log('Capacitor TTS fallback to Web:', e);
         }
       }
 
-      // 2. Dự phòng Web Speech API nếu mở trực tiếp trên trình duyệt Web
       if ('speechSynthesis' in window && window.speechSynthesis) {
         try {
           window.speechSynthesis.cancel();
@@ -303,11 +299,11 @@
           window.speechSynthesis.speak(utter);
           return;
         } catch (e) {
-          console.log('Web Speech Err:', e);
+          console.log('Web Speech error:', e);
         }
       }
 
-      alert("Điện thoại chưa bật Google Text-to-Speech (Mục Cài đặt -> Quản lý chung -> Ngôn ngữ & Bàn phím -> Xuất văn bản thành giọng nói).");
+      alert("Thiết bị chưa bật bộ đọc tiếng Anh Google TTS.");
     }
 
     function _speak_current_hint() {
@@ -316,7 +312,6 @@
       }
     }
 
-    // TELEMETRY QUEUE
     function pushLog(eventType, screenName, keyword = '') {
       const payload = {
         app_token: APP_CONFIG.appToken,
@@ -346,7 +341,6 @@
       }
     }
 
-    // ADMOB MODULES
     async function initAdMob() {
       if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AdMob) {
         try {
@@ -514,7 +508,6 @@
       _load_quiz(currentQuizIndex);
     }
 
-    // NHẬP CÂU & LỌC TRÙNG CÂU
     function _import_bulk_sentences() {
       trackUserInteraction('import_bulk');
 
@@ -649,7 +642,6 @@
       if (kw.trim().length > 2) pushLog('search_keyword', 'patterns', kw);
     }
 
-    // CLOUD BACKUP & RESTORE
     async function _do_cloud_backup() {
       trackUserInteraction('cloud_backup');
       const email = document.getElementById('cloud_email').value.trim();
@@ -661,7 +653,7 @@
       statusBox.style.display = 'block';
       statusBox.style.background = '#1e293b';
       statusBox.style.color = '#38bdf8';
-      statusBox.innerText = '⏳ Đang đồng bộ tiến trình học và câu cá nhân lên Cloud...';
+      statusBox.innerText = '⏳ Đang đồng bộ tiến trình học lên Cloud...';
 
       const fullAppData = {
         custom_sentences: customSentences,
@@ -749,7 +741,6 @@
       }
     }
 
-    // CANVAS SCRATCHPAD
     let canvas, ctx, drawing = false;
 
     function initCanvas() {
@@ -781,7 +772,6 @@
       trackUserInteraction('clear_canvas');
     }
 
-    // KHỞI TẠO AN TOÀN
     document.addEventListener('DOMContentLoaded', () => {
       const uidEl = document.getElementById('lbl_user_uid');
       if (uidEl) uidEl.innerText = userUid;
