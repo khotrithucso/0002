@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Sổ Luyện Tiếng Anh Ráp Câu Fast Pro V2</title>
+  <title>Sổ Luyện Tiếng Anh Ráp Câu Fast Pro V3</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
@@ -71,6 +71,8 @@
     .filter-bar { display: flex; gap: 8px; margin-bottom: 12px; }
     .filter-select { background: #0f172a; color: #fff; border: 1px solid var(--border-color); padding: 8px; border-radius: 6px; font-size: 12px; flex: 1; }
 
+    .guide-box { background: rgba(245, 158, 11, 0.1); border: 1px dashed var(--accent-amber); padding: 10px; border-radius: 8px; font-size: 11px; color: #fde68a; margin-bottom: 10px; line-height: 1.5; }
+
     #scratchCanvas { background: #fff; border-radius: 8px; width: 100%; height: 180px; touch-action: none; cursor: crosshair; }
 
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
@@ -79,7 +81,7 @@
 <body>
 
   <header class="v2_header">
-    <h1>🧩 Tiếng Anh Ráp Câu Fast Pro V2</h1>
+    <h1>🧩 Tiếng Anh Ráp Câu Fast Pro V3</h1>
   </header>
 
   <nav class="v2_tabs">
@@ -132,25 +134,35 @@
       </div>
     </div>
 
-    <!-- TAB 2: THÊM & QUẢN LÝ CÂU CÁ NHÂN -->
+    <!-- TAB 2: DÁN CÂU SONG NGỮ & CRUD -->
     <div id="tab_custom" class="v2_tab_content">
       <div class="card">
-        <h3>📋 Dán Nhiều Câu Cùng Lúc (Mỗi Dòng 1 Câu)</h3>
+        <h3>📋 Dán Hàng Loạt Câu Kèm Dịch Tiếng Việt</h3>
+        
+        <div class="guide-guide-box guide-box">
+          💡 <strong>Cú pháp dán chuẩn (Mỗi dòng 1 câu):</strong><br>
+          <code>Câu tiếng Anh||Nghĩa tiếng Việt</code><br>
+          <em>Ví dụ:</em><br>
+          How are you?||Bạn khỏe không<br>
+          What is your name?||Tên bạn là gì<br>
+          I am Phuong||Tôi là Phương
+        </div>
+
         <div class="form-group">
-          <label>Nhập/Chép danh sách các câu tiếng Anh của bạn vào đây:</label>
-          <textarea id="txt_bulk_input" class="form-control" rows="5" placeholder="I am phuong&#10;How old are you&#10;What is your name&#10;Where are you going"></textarea>
+          <label>Dán danh sách câu của bạn vào ô dưới đây:</label>
+          <textarea id="txt_bulk_input" class="form-control" rows="6" placeholder="How are you?||Bạn khỏe không&#10;What is your name?||Tên bạn là gì&#10;I am Phuong||Tôi là Phương"></textarea>
         </div>
         <button class="btn" onclick="_import_bulk_sentences()">📥 LƯU TẤT CẢ CÂU VÀO BỘ NHỚ</button>
       </div>
 
       <div class="card">
-        <h3>📜 Danh Sách Câu Bạn Đã Thêm (<span id="lbl_custom_count">0</span> câu)</h3>
+        <h3>📜 Danh Sách Câu Cá Nhân (<span id="lbl_custom_count">0</span> câu)</h3>
         <div id="customSentenceList" style="font-size:13px; margin-bottom: 12px;">Chưa có câu cá nhân nào.</div>
         <button class="btn btn-danger" style="font-size:12px; padding:8px;" onclick="_clear_all_custom_sentences()">🗑️ XÓA TOÀN BỘ CÂU TỰ THÊM</button>
       </div>
     </div>
 
-    <!-- TAB 3: MẪU CÂU GIAO TIẾP THỰC TẾ -->
+    <!-- TAB 3: MẪU CÂU THỰC TẾ -->
     <div id="tab_patterns" class="v2_tab_content">
       <div class="card">
         <h3>🗂️ Mẫu Câu Giao Tiếp Thường Gặp</h3>
@@ -197,13 +209,12 @@
   </div>
 
   <script>
-    // BẮT LỖI RUNTIME BẰNG ALERT THAY VÌ TRẮNG MÀN HÌNH
+    // BẮT LỖI RUNTIME CHỐNG TRẮNG MÀN HÌNH
     window.onerror = function (msg, url, line) {
       alert("Lỗi Runtime App:\n" + msg + "\nTại dòng: " + line);
       return false;
     };
 
-    // HÀM ĐỌC/GHI BỘ NHỚ AN TOÀN TUYỆT ĐỐI CHỐNG CRASH
     function getSafeStorage(key, fallback) {
       try {
         const val = localStorage.getItem(key);
@@ -220,18 +231,18 @@
       } catch (e) {}
     }
 
-    // HARDCODED APP CONFIG & ADMOB & API ENDPOINTS
+    // HARDCODED CONFIG & ADMOB & API ENDPOINTS
     const APP_CONFIG = {
       appToken: "com.trithucso.hoctienganhrapcau_0002_x9z",
       telemetryUrl: "https://khotrithucso.io.vn/apps/api/telemetry.php",
       cloudSyncUrl: "https://khotrithucso.io.vn/apps/api/cloud_sync.php",
       cloudRestoreUrl: "https://khotrithucso.io.vn/apps/api/cloud_restore.php",
-      adTriggerLimit: 5,
+      adTriggerLimit: 5, // CỨ ĐỦ 5 THAO TÁC CỦA NGUỜI DÙNG -> BẬT ADS XEN KẼ
       bannerAdId: "ca-app-pub-3940256099942544/6300978111",
       interstitialAdId: "ca-app-pub-3940256099942544/1033173712"
     };
 
-    // NGÂN HÀNG CÂU MẪU MẶC ĐỊNH
+    // NGÂN HÀNG CÂU MẪU MẶC ĐỊNH (SONG NGỮ CHUẨN)
     const DEFAULT_QUIZ_DATA = [
       { id: 'def_1', vn: "Tôi muốn đi đến sân bay.", en: "I want to go to the airport", words: ["I", "want", "to", "go", "to", "the", "airport"] },
       { id: 'def_2', vn: "Cái này giá bao nhiêu tiền?", en: "How much does this cost", words: ["How", "much", "does", "this", "cost"] },
@@ -326,9 +337,11 @@
       }
     }
 
-    function trackUserInteraction(screenName) {
-      pushLog('page_view', screenName);
+    // BỘ ĐẾM THAO TÁC THÔNG MINH (BẤM BẤT KỲ ĐÂU CŨNG TÍNH ĐỂ BẬT QUẢNG CÁO)
+    function trackUserInteraction(actionName) {
+      pushLog('user_action', actionName);
       let count = parseInt(getSafeStorage('_act_cnt', '0')) + 1;
+      
       if (count >= APP_CONFIG.adTriggerLimit) {
         showAdMobInterstitial();
         setSafeStorage('_act_cnt', '0');
@@ -344,7 +357,7 @@
       document.getElementById(tabId).classList.add('active');
       if (btnEl) btnEl.classList.add('active');
 
-      trackUserInteraction(screenName);
+      trackUserInteraction('tab_' + screenName);
     }
 
     // SPEECH SYNTHESIS
@@ -364,7 +377,7 @@
       }
     }
 
-    // BUILD ACTIVE QUIZ LIST & CONFIG
+    // BUILD ACTIVE QUIZ LIST
     function _rebuild_active_quiz_list() {
       const sourceEl = document.getElementById('sel_source');
       const orderEl = document.getElementById('sel_order');
@@ -393,6 +406,7 @@
 
     function _change_quiz_config() {
       _rebuild_active_quiz_list();
+      trackUserInteraction('change_config');
     }
 
     // CORE LOGIC: RÁP CÂU
@@ -446,9 +460,12 @@
 
     function _reset_current_quiz() {
       _load_quiz(currentQuizIndex);
+      trackUserInteraction('reset_quiz');
     }
 
     function _check_sentence() {
+      trackUserInteraction('check_sentence'); // ĐẾM THAO TÁC KHI BẤM KIỂM TRA
+
       const q = activeQuizList[currentQuizIndex];
       if (!q) return;
 
@@ -459,7 +476,8 @@
 
       if (userAns.toLowerCase() === q.en.toLowerCase()) {
         fb.className = 'feedback-box feedback-success';
-        fb.innerHTML = `🎉 <strong>CHÍNH XÁC!</strong><br>"${q.en}" <button class="chip" onclick="speakText('${q.en}')">🔊 Nghe lại</button>
+        fb.innerHTML = `🎉 <strong>CHÍNH XÁC!</strong><br>"${q.en}"<br><small style="color:#a7f3d0;">${q.vn}</small><br>
+        <button class="chip" style="margin-top:6px;" onclick="speakText('${q.en}')">🔊 Nghe phát âm</button>
         <button class="btn btn-secondary" style="margin-top:8px;" onclick="_next_quiz()">➡️ CÂU TIẾP THEO</button>`;
         speakText(q.en);
       } else {
@@ -469,27 +487,55 @@
     }
 
     function _next_quiz() {
+      trackUserInteraction('next_quiz'); // ĐẾM THAO TÁC KHI CHUYỂN CÂU
       currentQuizIndex++;
       _load_quiz(currentQuizIndex);
     }
 
-    // BULK IMPORT & CRUD
+    // PHÂN TÁCH CHUỖI SONG NGỮ VÀ NHẬP HÀNG LOẠT (BULK IMPORT V3)
     function _import_bulk_sentences() {
+      trackUserInteraction('import_bulk');
+
       const inp = document.getElementById('txt_bulk_input');
       if (!inp) return;
       const rawText = inp.value.trim();
-      if (!rawText) return alert('Vui lòng dán danh sách câu tiếng Anh!');
+      if (!rawText) return alert('Vui lòng dán danh sách câu theo cú pháp!');
 
       const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
       let addedCount = 0;
 
       lines.forEach(line => {
-        const wordsArr = line.split(/\s+/).filter(Boolean);
+        let enStr = line;
+        let vnStr = '';
+
+        // BÓC TÁCH CÁC KÝ HIỆU PHÂN CÁCH (||, |, - , :)
+        if (line.includes('||')) {
+          const parts = line.split('||');
+          enStr = parts[0].trim();
+          vnStr = parts[1].trim();
+        } else if (line.includes('|')) {
+          const parts = line.split('|');
+          enStr = parts[0].trim();
+          vnStr = parts[1].trim();
+        } else if (line.includes(' - ')) {
+          const parts = line.split(' - ');
+          enStr = parts[0].trim();
+          vnStr = parts[1].trim();
+        } else if (line.includes(' : ')) {
+          const parts = line.split(' : ');
+          enStr = parts[0].trim();
+          vnStr = parts[1].trim();
+        } else {
+          enStr = line;
+          vnStr = line; // Nếu không ghi tiếng Việt thì lấy luôn câu tiếng Anh
+        }
+
+        const wordsArr = enStr.split(/\s+/).filter(Boolean);
         if (wordsArr.length > 0) {
           const newObj = {
-            id: 'c_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-            vn: line,
-            en: line,
+            id: 'c_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+            vn: vnStr || enStr,
+            en: enStr,
             words: wordsArr
           };
           customSentences.push(newObj);
@@ -499,11 +545,10 @@
 
       setSafeStorage('_custom_sentences', customSentences);
       inp.value = '';
-      alert(`✅ Đã thêm thành công ${addedCount} câu vào danh sách cá nhân!`);
+      alert(`✅ Đã thêm thành công ${addedCount} câu (kèm dịch tiếng Việt) vào bộ nhớ!`);
       
       _render_custom_sentence_list();
       _rebuild_active_quiz_list();
-      pushLog('import_bulk_sentences', 'custom', addedCount.toString());
     }
 
     function _render_custom_sentence_list() {
@@ -522,6 +567,7 @@
         html += `<div class="item-row">
           <div class="item-main">
             <div class="item-en">#${idx + 1} ${item.en}</div>
+            <div class="item-vn">💡 ${item.vn}</div>
           </div>
           <button class="chip" onclick="speakText('${item.en}')">🔊</button>
           <button class="chip" style="background:#ef4444;" onclick="_delete_custom_sentence('${item.id}')">🗑️</button>
@@ -535,6 +581,7 @@
       setSafeStorage('_custom_sentences', customSentences);
       _render_custom_sentence_list();
       _rebuild_active_quiz_list();
+      trackUserInteraction('delete_custom_sentence');
     }
 
     function _clear_all_custom_sentences() {
@@ -543,6 +590,7 @@
         setSafeStorage('_custom_sentences', []);
         _render_custom_sentence_list();
         _rebuild_active_quiz_list();
+        trackUserInteraction('clear_all_custom');
       }
     }
 
@@ -571,6 +619,7 @@
 
     // CLOUD BACKUP & RESTORE
     async function _do_cloud_backup() {
+      trackUserInteraction('cloud_backup');
       const email = document.getElementById('cloud_email').value.trim();
       const pass = document.getElementById('cloud_pass').value.trim();
       const statusBox = document.getElementById('cloudStatus');
@@ -606,7 +655,6 @@
           statusBox.style.background = 'rgba(16, 185, 129, 0.2)';
           statusBox.style.color = '#10b981';
           statusBox.innerText = '✅ ' + data.message;
-          pushLog('cloud_backup_success', 'cloud');
         } else {
           statusBox.style.background = 'rgba(239, 68, 68, 0.2)';
           statusBox.style.color = '#ef4444';
@@ -620,6 +668,7 @@
     }
 
     async function _do_cloud_restore() {
+      trackUserInteraction('cloud_restore');
       const email = document.getElementById('cloud_email').value.trim();
       const pass = document.getElementById('cloud_pass').value.trim();
       const statusBox = document.getElementById('cloudStatus');
@@ -656,7 +705,6 @@
           statusBox.style.background = 'rgba(16, 185, 129, 0.2)';
           statusBox.style.color = '#10b981';
           statusBox.innerText = '🎉 ' + data.message + ' Phục hồi tiến trình thành công!';
-          pushLog('cloud_restore_success', 'cloud');
         } else {
           statusBox.style.background = 'rgba(239, 68, 68, 0.2)';
           statusBox.style.color = '#ef4444';
@@ -698,9 +746,10 @@
 
     function _clear_canvas() { 
       if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height); 
+      trackUserInteraction('clear_canvas');
     }
 
-    // KHỞI TẠO AN TOÀN SAU KHI DOM ĐÃ TẢI
+    // INIT APP
     document.addEventListener('DOMContentLoaded', () => {
       const uidEl = document.getElementById('lbl_user_uid');
       if (uidEl) uidEl.innerText = userUid;
