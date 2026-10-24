@@ -1,4 +1,4 @@
-name: Build Android APK
+Name: Build Android APK
 on:
   push:
     branches: [ main, master ]
@@ -21,11 +21,12 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Prepare Web Assets
+      - name: Prepare Web Assets & Icon
         run: |
           npm init -y
           mkdir -p www
           cp index.html www/index.html 2>/dev/null || true
+          cp icon.png www/icon.png 2>/dev/null || true
           cat << 'EOF' > capacitor.config.json
           {
             "appId": "com.trithucso.hoctienganhrapcau_0002_x9z",
@@ -37,12 +38,14 @@ jobs:
 
       - name: Install Capacitor & Plugins
         run: |
-          npm install --legacy-peer-deps @capacitor/core @capacitor/cli @capacitor/android @capacitor-community/admob @capacitor-community/text-to-speech
+          npm install --legacy-peer-deps @capacitor/core @capacitor/cli @capacitor/android @capacitor-community/admob @capacitor-community/text-to-speech @capacitor/assets
 
-      - name: Sync Capacitor Android Project
+      - name: Sync Capacitor Android Project & Generate App Icon
         run: |
           npx cap add android || true
           npx cap sync android
+          # Tự động tạo toàn bộ Icon App Android từ file icon.png
+          npx @capacitor/assets generate --android || true
           mkdir -p android/app/src/main/assets/public
           cp -r www/* android/app/src/main/assets/public/
 
