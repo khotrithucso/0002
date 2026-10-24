@@ -30,15 +30,15 @@ jobs:
 
           echo '{
             "appId": "com.trithucso.hoctienganhrapcau_0002_x9z",
-            "appName": "Tiếng Anh Ráp Câu Fast Pro V3.2",
+            "appName": "Tiếng Anh Ráp Câu Fast Pro V3.3",
             "webDir": "www",
             "bundledWebRuntime": false
           }' > capacitor.config.json
 
-      # 2. Cài đặt Thư viện Capacitor & AdMob
+      # 2. Cài đặt Thư viện Capacitor, AdMob & Text-To-Speech Native Plugin
       - name: Install Dependencies
         run: |
-          npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor-community/admob
+          npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor-community/admob @capacitor/text-to-speech
           python3 -m pip install Pillow
 
       # 3. Đồng bộ Android Project

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Sổ Luyện Tiếng Anh Ráp Câu Fast Pro V3.2</title>
+  <title>Sổ Luyện Tiếng Anh Ráp Câu Fast Pro V3.3</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
@@ -81,7 +81,7 @@
 <body>
 
   <header class="v2_header">
-    <h1>🧩 Tiếng Anh Ráp Câu Fast Pro V3.2</h1>
+    <h1>🧩 Tiếng Anh Ráp Câu Fast Pro V3.3</h1>
   </header>
 
   <nav class="v2_tabs">
@@ -268,55 +268,46 @@
       setSafeStorage('_app_user_uid', userUid);
     }
 
-    // ==========================================
-    // KHÓA SỬA LỖI PHÁT ÂM (WEB SPEECH API FULL FIX)
-    // ==========================================
-    let cachedEnVoice = null;
+    // =======================================================
+    // BỘ PHÁT ÂM NATIVE CAPACITOR TTS (CHẠY 100% TRÊN MỌI ANDROID)
+    // =======================================================
+    async function speakText(text) {
+      if (!text) return;
 
-    function initSpeechEngine() {
-      if (!('speechSynthesis' in window)) return;
-      
-      const loadVoices = () => {
-        const voices = window.speechSynthesis.getVoices();
-        cachedEnVoice = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('en')) || null;
-      };
-
-      loadVoices();
-      if (window.speechSynthesis.onvoiceschanged !== undefined) {
-        window.speechSynthesis.onvoiceschanged = loadVoices;
-      }
-    }
-
-    function speakText(text) {
-      if (!('speechSynthesis' in window)) {
-        alert("Thiết bị chưa hỗ trợ tính năng phát âm TTS!");
-        return;
-      }
-
-      try {
-        window.speechSynthesis.cancel(); // Reset hàng đợi cũ
-        if (window.speechSynthesis.paused) {
-          window.speechSynthesis.resume();
+      // 1. Ưu tiên gọi Native Plugin Capacitor TextToSpeech (Chuẩn phần cứng Android)
+      if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.TextToSpeech) {
+        try {
+          await window.Capacitor.Plugins.TextToSpeech.speak({
+            text: text,
+            lang: 'en-US',
+            rate: 0.9,
+            pitch: 1.0,
+            volume: 1.0,
+            category: 'ambient'
+          });
+          return;
+        } catch (e) {
+          console.log('Capacitor TTS Err:', e);
         }
-
-        const utter = new SpeechSynthesisUtterance(text);
-        utter.lang = 'en-US';
-        utter.rate = 0.85;
-        utter.pitch = 1.0;
-        utter.volume = 1.0;
-
-        if (cachedEnVoice) {
-          utter.voice = cachedEnVoice;
-        } else {
-          const voices = window.speechSynthesis.getVoices();
-          const found = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('en'));
-          if (found) utter.voice = found;
-        }
-
-        window.speechSynthesis.speak(utter);
-      } catch (e) {
-        console.log('Speech Err:', e);
       }
+
+      // 2. Dự phòng Web Speech API nếu mở trực tiếp trên trình duyệt Web
+      if ('speechSynthesis' in window && window.speechSynthesis) {
+        try {
+          window.speechSynthesis.cancel();
+          if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+
+          const utter = new SpeechSynthesisUtterance(text);
+          utter.lang = 'en-US';
+          utter.rate = 0.85;
+          window.speechSynthesis.speak(utter);
+          return;
+        } catch (e) {
+          console.log('Web Speech Err:', e);
+        }
+      }
+
+      alert("Điện thoại chưa bật Google Text-to-Speech (Mục Cài đặt -> Quản lý chung -> Ngôn ngữ & Bàn phím -> Xuất văn bản thành giọng nói).");
     }
 
     function _speak_current_hint() {
@@ -794,7 +785,6 @@
     document.addEventListener('DOMContentLoaded', () => {
       const uidEl = document.getElementById('lbl_user_uid');
       if (uidEl) uidEl.innerText = userUid;
-      initSpeechEngine();
       initCanvas();
       _render_custom_sentence_list();
       _rebuild_active_quiz_list();
