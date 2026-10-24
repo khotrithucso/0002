@@ -16,7 +16,7 @@ jobs:
           node-version: '22'
 
       - name: Setup Java JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '21'
@@ -35,19 +35,19 @@ jobs:
           }
           EOF
 
-      - name: Install Capacitor & Native Dependencies
+      - name: Install Dependencies & Plugins
         run: |
           npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor-community/admob @capacitor/text-to-speech
           python3 -m pip install Pillow --break-system-packages || python3 -m pip install Pillow || true
 
-      - name: Add & Sync Capacitor Android Platform
+      - name: Sync Capacitor Android
         run: |
           npx cap add android || true
           npx cap sync android
           mkdir -p android/app/src/main/assets/public
           cp -r www/* android/app/src/main/assets/public/
 
-      - name: Auto Generate App Icons
+      - name: Auto Generate App Launcher Icons
         run: |
           python3 -c "
           import os
@@ -70,9 +70,9 @@ jobs:
                   resized.save(os.path.join(target_dir, 'ic_launcher.png'))
                   resized.save(os.path.join(target_dir, 'ic_launcher_round.png'))
                   resized.save(os.path.join(target_dir, 'ic_launcher_foreground.png'))
-              print('✅ Icon App được khởi tạo thành công!')
+              print('✅ Tạo Icon App thành công!')
           else:
-              print('⚠️ Không thấy icon.png, sử dụng icon mặc định.')
+              print('⚠️ Không thấy icon.png, dùng icon mặc định.')
           "
 
       - name: Configure Android Manifest & AdMob
@@ -105,7 +105,7 @@ jobs:
                   f.write(content)
           "
 
-      - name: Fix Kotlin & Gradle Dependencies
+      - name: Fix Gradle & Kotlin Conflicts
         run: |
           if ! grep -q "kotlin-stdlib-jdk7" android/app/build.gradle; then
             echo "
@@ -127,4 +127,3 @@ jobs:
         with:
           name: app-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
- 
