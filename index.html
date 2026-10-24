@@ -132,7 +132,7 @@
       </div>
     </div>
 
-    <!-- TAB 2: THÊM & QUẢN LÝ CÂU CÁ NHÂN (BULK IMPORT & CRUD) -->
+    <!-- TAB 2: THÊM & QUẢN LÝ CÂU CÁ NHÂN -->
     <div id="tab_custom" class="v2_tab_content">
       <div class="card">
         <h3>📋 Dán Nhiều Câu Cùng Lúc (Mỗi Dòng 1 Câu)</h3>
@@ -197,11 +197,28 @@
   </div>
 
   <script>
-    // CATCH-ALL ERROR HANDLER
+    // BẮT LỖI RUNTIME BẰNG ALERT THAY VÌ TRẮNG MÀN HÌNH
     window.onerror = function (msg, url, line) {
       alert("Lỗi Runtime App:\n" + msg + "\nTại dòng: " + line);
       return false;
     };
+
+    // HÀM ĐỌC/GHI BỘ NHỚ AN TOÀN TUYỆT ĐỐI CHỐNG CRASH
+    function getSafeStorage(key, fallback) {
+      try {
+        const val = localStorage.getItem(key);
+        if (!val) return fallback;
+        return JSON.parse(val);
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function setSafeStorage(key, val) {
+      try {
+        localStorage.setItem(key, typeof val === 'string' ? val : JSON.stringify(val));
+      } catch (e) {}
+    }
 
     // HARDCODED APP CONFIG & ADMOB & API ENDPOINTS
     const APP_CONFIG = {
@@ -226,17 +243,23 @@
       { id: 'def_8', vn: "Hẹn gặp lại bạn sau nhé.", en: "See you again later", words: ["See", "you", "again", "later"] }
     ];
 
-    let customSentences = JSON.parse(localStorage.getItem('_custom_sentences') || '[]');
+    let customSentences = getSafeStorage('_custom_sentences', []);
     let activeQuizList = [];
     let currentQuizIndex = 0;
     let selectedWords = [];
     let poolWords = [];
 
-    let deviceId = localStorage.getItem('_app_dev_id') || ('dev_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36));
-    localStorage.setItem('_app_dev_id', deviceId);
+    let deviceId = getSafeStorage('_app_dev_id', null);
+    if (!deviceId) {
+      deviceId = 'dev_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+      setSafeStorage('_app_dev_id', deviceId);
+    }
 
-    let userUid = localStorage.getItem('_app_user_uid') || ('usr_' + Math.random().toString(36).substr(2, 10) + '_' + Date.now().toString(36));
-    localStorage.setItem('_app_user_uid', userUid);
+    let userUid = getSafeStorage('_app_user_uid', null);
+    if (!userUid) {
+      userUid = 'usr_' + Math.random().toString(36).substr(2, 10) + '_' + Date.now().toString(36);
+      setSafeStorage('_app_user_uid', userUid);
+    }
 
     // TELEMETRY QUEUE LOGIC
     function pushLog(eventType, screenName, keyword = '') {
@@ -250,7 +273,7 @@
         time: Math.floor(Date.now() / 1000)
       };
 
-      const offlineQueue = JSON.parse(localStorage.getItem('_offline_logs') || '[]');
+      const offlineQueue = getSafeStorage('_offline_logs', []);
       offlineQueue.push(payload);
 
       if (navigator.onLine) {
@@ -259,16 +282,16 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(offlineQueue)
         }).then(res => res.json()).then(() => {
-          localStorage.removeItem('_offline_logs');
+          setSafeStorage('_offline_logs', []);
         }).catch(() => {
-          localStorage.setItem('_offline_logs', JSON.stringify(offlineQueue));
+          setSafeStorage('_offline_logs', offlineQueue);
         });
       } else {
-        localStorage.setItem('_offline_logs', JSON.stringify(offlineQueue));
+        setSafeStorage('_offline_logs', offlineQueue);
       }
     }
 
-    // ADMOB MODULES (CHUẨN CHUỖI STRING TRÁNH CRASH BRIDGE)
+    // ADMOB MODULES
     async function initAdMob() {
       if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AdMob) {
         try {
@@ -305,12 +328,12 @@
 
     function trackUserInteraction(screenName) {
       pushLog('page_view', screenName);
-      let count = parseInt(localStorage.getItem('_act_cnt') || '0') + 1;
+      let count = parseInt(getSafeStorage('_act_cnt', '0')) + 1;
       if (count >= APP_CONFIG.adTriggerLimit) {
         showAdMobInterstitial();
-        localStorage.setItem('_act_cnt', '0');
+        setSafeStorage('_act_cnt', '0');
       } else {
-        localStorage.setItem('_act_cnt', count.toString());
+        setSafeStorage('_act_cnt', count.toString());
       }
     }
 
@@ -324,7 +347,7 @@
       trackUserInteraction(screenName);
     }
 
-    // SPEECH SYNTHESIS (WEB SPEECH API)
+    // SPEECH SYNTHESIS
     function speakText(text) {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -343,8 +366,10 @@
 
     // BUILD ACTIVE QUIZ LIST & CONFIG
     function _rebuild_active_quiz_list() {
-      const source = document.getElementById('sel_source').value;
-      const order = document.getElementById('sel_order').value;
+      const sourceEl = document.getElementById('sel_source');
+      const orderEl = document.getElementById('sel_order');
+      const source = sourceEl ? sourceEl.value : 'all';
+      const order = orderEl ? orderEl.value : 'random';
 
       if (source === 'default') {
         activeQuizList = [...DEFAULT_QUIZ_DATA];
@@ -355,7 +380,7 @@
       }
 
       if (activeQuizList.length === 0) {
-        activeQuizList = [...DEFAULT_QUIZ_DATA]; // Fallback
+        activeQuizList = [...DEFAULT_QUIZ_DATA];
       }
 
       if (order === 'random') {
@@ -376,10 +401,13 @@
       if (index >= activeQuizList.length) currentQuizIndex = 0;
       const q = activeQuizList[currentQuizIndex];
       
-      document.getElementById('lbl_vn_hint').innerText = q.vn || q.en;
-      document.getElementById('quizFeedback').style.display = 'none';
-      selectedWords = [];
+      const hintEl = document.getElementById('lbl_vn_hint');
+      if (hintEl) hintEl.innerText = q.vn || q.en;
       
+      const fb = document.getElementById('quizFeedback');
+      if (fb) fb.style.display = 'none';
+      
+      selectedWords = [];
       poolWords = [...q.words].sort(() => Math.random() - 0.5);
       _render_quiz_boxes();
     }
@@ -387,6 +415,7 @@
     function _render_quiz_boxes() {
       const targetBox = document.getElementById('box_target');
       const poolBox = document.getElementById('box_pool');
+      if (!targetBox || !poolBox) return;
 
       targetBox.innerHTML = '';
       selectedWords.forEach((word, idx) => {
@@ -425,6 +454,7 @@
 
       const userAns = selectedWords.join(' ');
       const fb = document.getElementById('quizFeedback');
+      if (!fb) return;
       fb.style.display = 'block';
 
       if (userAns.toLowerCase() === q.en.toLowerCase()) {
@@ -443,21 +473,22 @@
       _load_quiz(currentQuizIndex);
     }
 
-    // BULK IMPORT & CRUD CUSTOM SENTENCES
+    // BULK IMPORT & CRUD
     function _import_bulk_sentences() {
-      const rawText = document.getElementById('txt_bulk_input').value.trim();
+      const inp = document.getElementById('txt_bulk_input');
+      if (!inp) return;
+      const rawText = inp.value.trim();
       if (!rawText) return alert('Vui lòng dán danh sách câu tiếng Anh!');
 
       const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
       let addedCount = 0;
 
       lines.forEach(line => {
-        // Tách câu thành các mảng từ
         const wordsArr = line.split(/\s+/).filter(Boolean);
         if (wordsArr.length > 0) {
           const newObj = {
             id: 'c_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-            vn: line, // Lấy nguyên câu làm nghĩa/gợi ý
+            vn: line,
             en: line,
             words: wordsArr
           };
@@ -466,8 +497,8 @@
         }
       });
 
-      localStorage.setItem('_custom_sentences', JSON.stringify(customSentences));
-      document.getElementById('txt_bulk_input').value = '';
+      setSafeStorage('_custom_sentences', customSentences);
+      inp.value = '';
       alert(`✅ Đã thêm thành công ${addedCount} câu vào danh sách cá nhân!`);
       
       _render_custom_sentence_list();
@@ -477,8 +508,10 @@
 
     function _render_custom_sentence_list() {
       const listEl = document.getElementById('customSentenceList');
-      document.getElementById('lbl_custom_count').innerText = customSentences.length;
+      const countEl = document.getElementById('lbl_custom_count');
+      if (countEl) countEl.innerText = customSentences.length;
 
+      if (!listEl) return;
       if (customSentences.length === 0) {
         listEl.innerHTML = '<div style="color:var(--text-muted);">Chưa có câu cá nhân nào.</div>';
         return;
@@ -499,7 +532,7 @@
 
     function _delete_custom_sentence(id) {
       customSentences = customSentences.filter(item => item.id !== id);
-      localStorage.setItem('_custom_sentences', JSON.stringify(customSentences));
+      setSafeStorage('_custom_sentences', customSentences);
       _render_custom_sentence_list();
       _rebuild_active_quiz_list();
     }
@@ -507,7 +540,7 @@
     function _clear_all_custom_sentences() {
       if (confirm('Bạn có chắc chắn muốn xóa TOÀN BỘ danh sách câu tự thêm?')) {
         customSentences = [];
-        localStorage.removeItem('_custom_sentences');
+        setSafeStorage('_custom_sentences', []);
         _render_custom_sentence_list();
         _rebuild_active_quiz_list();
       }
@@ -516,6 +549,7 @@
     // TAB 3: MẪU CÂU THỰC TẾ
     function _render_patterns(filter = '') {
       const listEl = document.getElementById('patternList');
+      if (!listEl) return;
       const all = [...DEFAULT_QUIZ_DATA, ...customSentences];
       let html = '';
       all.filter(q => q.en.toLowerCase().includes(filter.toLowerCase()) || q.vn.toLowerCase().includes(filter.toLowerCase())).forEach(q => {
@@ -614,7 +648,7 @@
 
           if (restored.custom_sentences) {
             customSentences = restored.custom_sentences;
-            localStorage.setItem('_custom_sentences', JSON.stringify(customSentences));
+            setSafeStorage('_custom_sentences', customSentences);
             _render_custom_sentence_list();
             _rebuild_active_quiz_list();
           }
@@ -666,9 +700,10 @@
       if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height); 
     }
 
-    // INIT APP
+    // KHỞI TẠO AN TOÀN SAU KHI DOM ĐÃ TẢI
     document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('lbl_user_uid').innerText = userUid;
+      const uidEl = document.getElementById('lbl_user_uid');
+      if (uidEl) uidEl.innerText = userUid;
       initCanvas();
       _render_custom_sentence_list();
       _rebuild_active_quiz_list();
