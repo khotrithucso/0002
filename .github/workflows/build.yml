@@ -21,27 +21,27 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      # 1. Chuẩn bị tài nguyên Web & Ép cấu hình capacitor.config.json
+      # 1. Chuẩn bị tài nguyên Web & Cấu hình Capacitor
       - name: Prepare Web Assets
         run: |
           npm init -y
           mkdir -p www
           cp index.html www/index.html 2>/dev/null || true
-          if [ -f style.css ]; then cp style.css www/ 2>/dev/null || true; fi
 
           echo '{
             "appId": "com.trithucso.hoctienganhrapcau_0002_x9z",
-            "appName": "Tiếng Anh Ráp Câu Fast Pro V2",
+            "appName": "Tiếng Anh Ráp Câu Fast Pro V3.2",
             "webDir": "www",
             "bundledWebRuntime": false
           }' > capacitor.config.json
 
-      # 2. Cài đặt Capacitor & Plugins
+      # 2. Cài đặt Thư viện Capacitor & AdMob
       - name: Install Dependencies
         run: |
           npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor-community/admob
+          python3 -m pip install Pillow
 
-      # 3. Khởi tạo & Đồng bộ Capacitor sang thư mục Android Assets
+      # 3. Đồng bộ Android Project
       - name: Sync Capacitor Android
         run: |
           npx cap add android 2>/dev/null || true
@@ -49,7 +49,36 @@ jobs:
           mkdir -p android/app/src/main/assets/public
           cp -r www/* android/app/src/main/assets/public/
 
-      # 4. Bỏ qua SSL & Cấu hình AdMob App ID
+      # 4. Tự động chuyển đổi icon.png ở thư mục gốc thành Icon App Android
+      - name: Generate App Launcher Icons
+        run: |
+          python3 -c "
+          import os
+          from PIL import Image
+
+          icon_path = 'icon.png'
+          if os.path.exists(icon_path):
+              img = Image.open(icon_path)
+              sizes = {
+                  'mipmap-mdpi': 48,
+                  'mipmap-hdpi': 72,
+                  'mipmap-xhdpi': 96,
+                  'mipmap-xxhdpi': 144,
+                  'mipmap-xxxhdpi': 192
+              }
+              for folder, size in sizes.items():
+                  target_dir = os.path.join('android/app/src/main/res', folder)
+                  os.makedirs(target_dir, exist_ok=True)
+                  resized = img.resize((size, size), Image.Resampling.LANCZOS)
+                  resized.save(os.path.join(target_dir, 'ic_launcher.png'))
+                  resized.save(os.path.join(target_dir, 'ic_launcher_round.png'))
+                  resized.save(os.path.join(target_dir, 'ic_launcher_foreground.png'))
+              print('✅ Đã khởi tạo Icon App từ file icon.png!')
+          else:
+              print('⚠️ Không tìm thấy file icon.png tại thư mục gốc, dùng icon mặc định.')
+          "
+
+      # 5. Cấu hình Bỏ qua SSL & Chèn AdMob Application ID
       - name: Configure Android Manifest
         run: |
           mkdir -p android/app/src/main/res/xml
@@ -78,7 +107,7 @@ jobs:
                   f.write(content)
           "
 
-      # 5. Sửa trùng lặp thư viện Kotlin
+      # 6. Loại bỏ xung đột Kotlin Gradle
       - name: Fix Gradle Dependencies
         run: |
           if ! grep -q "kotlin-stdlib-jdk7" android/app/build.gradle; then
@@ -90,16 +119,17 @@ jobs:
             " >> android/app/build.gradle
           fi
 
-      # 6. Biên dịch APK Debug
+      # 7. Đóng gói file APK
       - name: Build Android APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      # 7. Upload APK Artifact
+      # 8. Upload Artifact
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+ 

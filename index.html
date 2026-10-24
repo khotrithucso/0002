@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Sổ Luyện Tiếng Anh Ráp Câu Fast Pro V3</title>
+  <title>Sổ Luyện Tiếng Anh Ráp Câu Fast Pro V3.2</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
@@ -81,7 +81,7 @@
 <body>
 
   <header class="v2_header">
-    <h1>🧩 Tiếng Anh Ráp Câu Fast Pro V3</h1>
+    <h1>🧩 Tiếng Anh Ráp Câu Fast Pro V3.2</h1>
   </header>
 
   <nav class="v2_tabs">
@@ -139,18 +139,17 @@
       <div class="card">
         <h3>📋 Dán Hàng Loạt Câu Kèm Dịch Tiếng Việt</h3>
         
-        <div class="guide-guide-box guide-box">
+        <div class="guide-box">
           💡 <strong>Cú pháp dán chuẩn (Mỗi dòng 1 câu):</strong><br>
           <code>Câu tiếng Anh||Nghĩa tiếng Việt</code><br>
           <em>Ví dụ:</em><br>
           How are you?||Bạn khỏe không<br>
-          What is your name?||Tên bạn là gì<br>
-          I am Phuong||Tôi là Phương
+          What is your name?||Tên bạn là gì
         </div>
 
         <div class="form-group">
           <label>Dán danh sách câu của bạn vào ô dưới đây:</label>
-          <textarea id="txt_bulk_input" class="form-control" rows="6" placeholder="How are you?||Bạn khỏe không&#10;What is your name?||Tên bạn là gì&#10;I am Phuong||Tôi là Phương"></textarea>
+          <textarea id="txt_bulk_input" class="form-control" rows="6" placeholder="How are you?||Bạn khỏe không&#10;What is your name?||Tên bạn là gì"></textarea>
         </div>
         <button class="btn" onclick="_import_bulk_sentences()">📥 LƯU TẤT CẢ CÂU VÀO BỘ NHỚ</button>
       </div>
@@ -209,7 +208,6 @@
   </div>
 
   <script>
-    // BẮT LỖI RUNTIME CHỐNG TRẮNG MÀN HÌNH
     window.onerror = function (msg, url, line) {
       alert("Lỗi Runtime App:\n" + msg + "\nTại dòng: " + line);
       return false;
@@ -231,18 +229,16 @@
       } catch (e) {}
     }
 
-    // HARDCODED CONFIG & ADMOB & API ENDPOINTS
     const APP_CONFIG = {
       appToken: "com.trithucso.hoctienganhrapcau_0002_x9z",
       telemetryUrl: "https://khotrithucso.io.vn/apps/api/telemetry.php",
       cloudSyncUrl: "https://khotrithucso.io.vn/apps/api/cloud_sync.php",
       cloudRestoreUrl: "https://khotrithucso.io.vn/apps/api/cloud_restore.php",
-      adTriggerLimit: 5, // CỨ ĐỦ 5 THAO TÁC CỦA NGUỜI DÙNG -> BẬT ADS XEN KẼ
+      adTriggerLimit: 5,
       bannerAdId: "ca-app-pub-3940256099942544/6300978111",
       interstitialAdId: "ca-app-pub-3940256099942544/1033173712"
     };
 
-    // NGÂN HÀNG CÂU MẪU MẶC ĐỊNH (SONG NGỮ CHUẨN)
     const DEFAULT_QUIZ_DATA = [
       { id: 'def_1', vn: "Tôi muốn đi đến sân bay.", en: "I want to go to the airport", words: ["I", "want", "to", "go", "to", "the", "airport"] },
       { id: 'def_2', vn: "Cái này giá bao nhiêu tiền?", en: "How much does this cost", words: ["How", "much", "does", "this", "cost"] },
@@ -272,7 +268,64 @@
       setSafeStorage('_app_user_uid', userUid);
     }
 
-    // TELEMETRY QUEUE LOGIC
+    // ==========================================
+    // KHÓA SỬA LỖI PHÁT ÂM (WEB SPEECH API FULL FIX)
+    // ==========================================
+    let cachedEnVoice = null;
+
+    function initSpeechEngine() {
+      if (!('speechSynthesis' in window)) return;
+      
+      const loadVoices = () => {
+        const voices = window.speechSynthesis.getVoices();
+        cachedEnVoice = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('en')) || null;
+      };
+
+      loadVoices();
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+      }
+    }
+
+    function speakText(text) {
+      if (!('speechSynthesis' in window)) {
+        alert("Thiết bị chưa hỗ trợ tính năng phát âm TTS!");
+        return;
+      }
+
+      try {
+        window.speechSynthesis.cancel(); // Reset hàng đợi cũ
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'en-US';
+        utter.rate = 0.85;
+        utter.pitch = 1.0;
+        utter.volume = 1.0;
+
+        if (cachedEnVoice) {
+          utter.voice = cachedEnVoice;
+        } else {
+          const voices = window.speechSynthesis.getVoices();
+          const found = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('en'));
+          if (found) utter.voice = found;
+        }
+
+        window.speechSynthesis.speak(utter);
+      } catch (e) {
+        console.log('Speech Err:', e);
+      }
+    }
+
+    function _speak_current_hint() {
+      if (activeQuizList[currentQuizIndex]) {
+        speakText(activeQuizList[currentQuizIndex].en);
+      }
+    }
+
+    // TELEMETRY QUEUE
     function pushLog(eventType, screenName, keyword = '') {
       const payload = {
         app_token: APP_CONFIG.appToken,
@@ -337,11 +390,9 @@
       }
     }
 
-    // BỘ ĐẾM THAO TÁC THÔNG MINH (BẤM BẤT KỲ ĐÂU CŨNG TÍNH ĐỂ BẬT QUẢNG CÁO)
     function trackUserInteraction(actionName) {
       pushLog('user_action', actionName);
       let count = parseInt(getSafeStorage('_act_cnt', '0')) + 1;
-      
       if (count >= APP_CONFIG.adTriggerLimit) {
         showAdMobInterstitial();
         setSafeStorage('_act_cnt', '0');
@@ -350,7 +401,6 @@
       }
     }
 
-    // TAB NAVIGATION
     function switchTab(tabId, screenName, btnEl) {
       document.querySelectorAll('.v2_tab_content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.v2_tab_btn').forEach(el => el.classList.remove('active'));
@@ -360,24 +410,6 @@
       trackUserInteraction('tab_' + screenName);
     }
 
-    // SPEECH SYNTHESIS
-    function speakText(text) {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utter = new SpeechSynthesisUtterance(text);
-        utter.lang = 'en-US';
-        utter.rate = 0.85;
-        window.speechSynthesis.speak(utter);
-      }
-    }
-
-    function _speak_current_hint() {
-      if (activeQuizList[currentQuizIndex]) {
-        speakText(activeQuizList[currentQuizIndex].en);
-      }
-    }
-
-    // BUILD ACTIVE QUIZ LIST
     function _rebuild_active_quiz_list() {
       const sourceEl = document.getElementById('sel_source');
       const orderEl = document.getElementById('sel_order');
@@ -409,7 +441,6 @@
       trackUserInteraction('change_config');
     }
 
-    // CORE LOGIC: RÁP CÂU
     function _load_quiz(index) {
       if (activeQuizList.length === 0) return;
       if (index >= activeQuizList.length) currentQuizIndex = 0;
@@ -464,7 +495,7 @@
     }
 
     function _check_sentence() {
-      trackUserInteraction('check_sentence'); // ĐẾM THAO TÁC KHI BẤM KIỂM TRA
+      trackUserInteraction('check_sentence');
 
       const q = activeQuizList[currentQuizIndex];
       if (!q) return;
@@ -487,12 +518,12 @@
     }
 
     function _next_quiz() {
-      trackUserInteraction('next_quiz'); // ĐẾM THAO TÁC KHI CHUYỂN CÂU
+      trackUserInteraction('next_quiz');
       currentQuizIndex++;
       _load_quiz(currentQuizIndex);
     }
 
-    // PHÂN TÁCH CHUỖI SONG NGỮ VÀ NHẬP HÀNG LOẠT (BULK IMPORT V3)
+    // NHẬP CÂU & LỌC TRÙNG CÂU
     function _import_bulk_sentences() {
       trackUserInteraction('import_bulk');
 
@@ -503,12 +534,12 @@
 
       const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
       let addedCount = 0;
+      let dupCount = 0;
 
       lines.forEach(line => {
         let enStr = line;
         let vnStr = '';
 
-        // BÓC TÁCH CÁC KÝ HIỆU PHÂN CÁCH (||, |, - , :)
         if (line.includes('||')) {
           const parts = line.split('||');
           enStr = parts[0].trim();
@@ -521,13 +552,19 @@
           const parts = line.split(' - ');
           enStr = parts[0].trim();
           vnStr = parts[1].trim();
-        } else if (line.includes(' : ')) {
-          const parts = line.split(' : ');
-          enStr = parts[0].trim();
-          vnStr = parts[1].trim();
         } else {
           enStr = line;
-          vnStr = line; // Nếu không ghi tiếng Việt thì lấy luôn câu tiếng Anh
+          vnStr = line;
+        }
+
+        const cleanEn = enStr.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+        const isExist = customSentences.some(item => 
+          item.en.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim() === cleanEn
+        );
+
+        if (isExist) {
+          dupCount++;
+          return;
         }
 
         const wordsArr = enStr.split(/\s+/).filter(Boolean);
@@ -545,7 +582,12 @@
 
       setSafeStorage('_custom_sentences', customSentences);
       inp.value = '';
-      alert(`✅ Đã thêm thành công ${addedCount} câu (kèm dịch tiếng Việt) vào bộ nhớ!`);
+
+      let msg = `✅ Đã thêm thành công ${addedCount} câu mới!`;
+      if (dupCount > 0) {
+        msg += `\n⚠️ Bỏ qua ${dupCount} câu bị trùng lặp.`;
+      }
+      alert(msg);
       
       _render_custom_sentence_list();
       _rebuild_active_quiz_list();
@@ -594,7 +636,6 @@
       }
     }
 
-    // TAB 3: MẪU CÂU THỰC TẾ
     function _render_patterns(filter = '') {
       const listEl = document.getElementById('patternList');
       if (!listEl) return;
@@ -749,10 +790,11 @@
       trackUserInteraction('clear_canvas');
     }
 
-    // INIT APP
+    // KHỞI TẠO AN TOÀN
     document.addEventListener('DOMContentLoaded', () => {
       const uidEl = document.getElementById('lbl_user_uid');
       if (uidEl) uidEl.innerText = userUid;
+      initSpeechEngine();
       initCanvas();
       _render_custom_sentence_list();
       _rebuild_active_quiz_list();
@@ -763,3 +805,4 @@
   </script>
 </body>
 </html>
+ 
