@@ -37,7 +37,7 @@ jobs:
 
       - name: Install Capacitor & Plugins
         run: |
-          npm install --legacy-peer-deps @capacitor/core @capacitor/cli @capacitor/android @capacitor-community/admob @capacitor/text-to-speech
+          npm install --legacy-peer-deps @capacitor/core @capacitor/cli @capacitor/android @capacitor-community/admob @capacitor-community/text-to-speech
 
       - name: Sync Capacitor Android Project
         run: |
@@ -83,4 +83,3 @@ jobs:
         with:
           name: app-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
- 
